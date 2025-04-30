@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Планировщик задач</title>
+  <link rel="stylesheet" href="./styles/reset.css">
+  <link rel="stylesheet" href="./styles/style.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1>Планировщик задач</h1>
+
+    <!-- Форма добавления задачи -->
+    <form id="form">
+      <div class="form-container">
+        <input id="taskInput" class="task-title" type="text" placeholder="Название задачи">
+        <button id="addTaskBtn" class="add-btn active" type="submit">Добавить задачу</button>
+      </div>
+    </form>
+
+    <!-- Доски задач -->
+    <div class="board">
+      <div id="todo" class="column board-column">
+        <h2 class="board__title">К выполнению</h2>
+        <ul id="todoTasksList" class="task-list"></ul>
+      </div>
+      <div id="done" class="column">
+        <h2 class="board__title">Выполнено</h2>
+        <ul id="doneTasksList" class="task-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="./js/main.js"></script>
+</body>
+
+</html>
