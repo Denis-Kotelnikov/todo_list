@@ -105,53 +105,123 @@ function deleteCompletedTask(event) {
 }
 
 // Редактирование задачи
-function editTask(event) {
-  const taskItem = event.target.closest('.task-list__item'); // родительский элемент
-  const titleElement = taskItem.querySelector('.task-title'); // отображаемое название задачи
-  const inputElement = taskItem.querySelector('.edit-input'); // поле ввода для редактирования
-  const saveButton = taskItem.querySelector('.save-btn'); // кнопка сохранить
-  const buttons = taskItem.querySelectorAll('.task-item__buttons'); // все кнопки задачи
+// function editTask(event) {
+//   const taskItem = event.target.closest('.task-list__item'); // родительский элемент
+//   const titleElement = taskItem.querySelector('.task-title'); // отображаемое название задачи
+//   const inputElement = taskItem.querySelector('.edit-input'); // поле ввода для редактирования
+//   const saveButton = taskItem.querySelector('.save-btn'); // кнопка сохранить
+//   const buttons = taskItem.querySelectorAll('.task-item__buttons'); // все кнопки задачи
 
-  // Скрываем отображение текста и показываем поле редактирования
-  titleElement.style.display = 'none';
-  inputElement.style.display = 'block';
-  saveButton.style.display = 'block';
+//   // Скрываем отображение текста и показываем поле редактирования
+//   titleElement.style.display = 'none';
+//   inputElement.style.display = 'block';
+//   saveButton.style.display = 'block';
+
+//   // Скрываем все кнопки (редактировать, завершить)
+//   buttons.forEach(b => b.style.display = 'none');
+
+//   // Устанавливаем фокус в поле редактирования
+//   inputElement.focus();
+
+//   // Обработчик на кнопку "сохранить"
+//   saveButton.onclick = () => {
+//     const newText = inputElement.value.trim(); // получаем новый текст
+//     if (!newText) {
+//       alert('Пожалуйста, введите текст для редактирования.');
+//       return;
+//     }
+//     // Обновляем отображаемый текст
+//     titleElement.textContent = newText;
+//     // Возвращаем видимость текста и скрываем поле редактирования
+//     titleElement.style.display = 'block';
+//     inputElement.style.display = 'none';
+//     saveButton.style.display = 'none';
+
+//     // Показываем все кнопки обратно
+//     buttons.forEach(b => b.style.display = 'flex');
+
+//     // Обновляем текст задачи в массиве
+//     const id = Number(taskItem.id);
+//     const index = tasks.findIndex(t => t.id === id);
+//     if (index !== -1) {
+//       tasks[index].text = newText; // меняем в массиве
+//       saveToLocalStorage(); // сохраняем
+//     }
+
+//     // Удаляем обработчик, чтобы не накапливался
+//     saveButton.onclick = null;
+//   };
+// }
+
+function editTask(event) { // Объявление функции редактирования задачи, вызываемой при клике по кнопке редактирования
+  const taskItem = event.target.closest('.task-list__item'); // Находим родительский элемент задачи по классу '.task-list__item'
+  const titleElement = taskItem.querySelector('.task-title'); // Получаем элемент с классом '.task-title', где отображается текст задачи
+  const inputElement = taskItem.querySelector('.edit-input'); // Получаем поле ввода для редактирования по классу '.edit-input'
+  const saveButton = taskItem.querySelector('.save-btn'); // Получаем кнопку сохранения по классу '.save-btn'
+  const buttons = taskItem.querySelectorAll('.task-item__buttons'); // Получаем все кнопки внутри задачи для дальнейшей скрытия/показа
+
+  // Скрываем отображение текста задачи и показываем поле редактирования
+  titleElement.style.display = 'none'; // Скрываем текст задачи
+  inputElement.style.display = 'block'; // Показываем поле редактирования
+  saveButton.style.display = 'block'; // Показываем кнопку "Сохранить"
 
   // Скрываем все кнопки (редактировать, завершить)
-  buttons.forEach(b => b.style.display = 'none');
+  buttons.forEach(b => b.style.display = 'none'); // Для каждой кнопки внутри задачи устанавливаем display: none
 
-  // Устанавливаем фокус в поле редактирования
+  // Устанавливаем фокус на поле редактирования для удобства пользователя
   inputElement.focus();
 
-  // Обработчик на кнопку "сохранить"
-  saveButton.onclick = () => {
-    const newText = inputElement.value.trim(); // получаем новый текст
-    if (!newText) {
-      alert('Пожалуйста, введите текст для редактирования.');
-      return;
+  // Объявляем внутреннюю функцию для сохранения изменений
+  function saveChanges() {
+    const newText = inputElement.value.trim(); // Получаем введенный текст и удаляем пробелы по краям
+    if (!newText) { // Если текст пустой
+      alert('Пожалуйста, введите текст для редактирования.'); // Выводим предупреждение
+      return; // Выходим из функции без сохранения
     }
-    // Обновляем отображаемый текст
+    // Обновляем отображаемый текст задачи
     titleElement.textContent = newText;
-    // Возвращаем видимость текста и скрываем поле редактирования
-    titleElement.style.display = 'block';
-    inputElement.style.display = 'none';
-    saveButton.style.display = 'none';
+    // Возвращаем видимость текста и скрываем поле редактирования и кнопку "Сохранить"
+    titleElement.style.display = 'block'; // Показываем текст задачи
+    inputElement.style.display = 'none'; // Прячем поле редактирования
+    saveButton.style.display = 'none'; // Прячем кнопку "Сохранить"
 
-    // Показываем все кнопки обратно
+    // Показываем все ранее скрытые кнопки обратно
     buttons.forEach(b => b.style.display = 'flex');
 
-    // Обновляем текст задачи в массиве
-    const id = Number(taskItem.id);
-    const index = tasks.findIndex(t => t.id === id);
-    if (index !== -1) {
-      tasks[index].text = newText; // меняем в массиве
-      saveToLocalStorage(); // сохраняем
+    // Обновляем текст задачи в массиве задач
+    const id = Number(taskItem.id); // Получаем id элемента
+    const index = tasks.findIndex(t => t.id === id); // Находим индекс задачи в массиве по id
+    if (index !== -1) { // Если задача найдена
+      tasks[index].text = newText; // Обновляем текст задачи
+      saveToLocalStorage(); // Сохраняем изменения в localStorage
     }
-
-    // Удаляем обработчик, чтобы не накапливался
+    // Удаляем обработчик события для клавиш, чтобы он не накапливался
+    inputElement.removeEventListener('keydown', handleKeyDown);
+    // Удаляем обработчик для кнопки "Сохранить", чтобы он не оставался активным
     saveButton.onclick = null;
-  };
-}
+  }
+
+  // Объявляем обработчик для нажатий клавиш в поле редактирования
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') { // Если нажата клавиша Enter
+      saveChanges(); // Вызываем функцию сохранения
+    } else if (e.key === 'Escape') { // Если нажата клавиша Escape (по желанию)
+      // Восстанавливаем отображение текста и скрываем поле редактирования
+      titleElement.style.display = 'block'; // Показываем текст
+      inputElement.style.display = 'none'; // Скрываем поле редактирования
+      saveButton.style.display = 'none'; // Скрываем кнопку "Сохранить"
+      // Восстанавливаем отображение всех кнопок
+      buttons.forEach(b => b.style.display = 'flex');
+      // Удаляем обработчик события для клавиш
+      inputElement.removeEventListener('keydown', handleKeyDown);
+      // Удаляем обработчик для кнопки "Сохранить"
+      saveButton.onclick = null;
+    }
+  }
+
+  // Добавляем обработчик для события 'keydown' на поле ввода, чтобы реагировать на Enter
+  inputElement.addEventListener('keydown', handleKeyDown);
+} // Конец функции editTask
 
 // Переключение статуса задачи между активной и выполненной
 function markAsDone(event) {
