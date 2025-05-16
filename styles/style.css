@@ -99,6 +99,7 @@ input {
 
 .task-item__buttons {
 	display: flex;
+	justify-content: flex-end;
 	padding-top: 4px;
 	width: 80px;
 	background: none;
@@ -155,4 +156,7 @@ input {
 
 .done-task {
 	opacity: 0.5;
+}
+.done-btn {
+	opacity: 0;
 }

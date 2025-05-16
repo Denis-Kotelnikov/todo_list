@@ -1,228 +1,242 @@
-// Находим элементы на странице
-const form = document.querySelector('#form'); // Получаем элемент формы для добавления задач
-const taskInput = document.querySelector('#taskInput'); //Получаем поле ввода для новой задачи
-const todoTasksList = document.querySelector('#todoTasksList'); // Получаем список активных задач
-const doneTasksList = document.querySelector('#doneTasksList'); // Получаем список выполненных задач
+// Находим элемент формы для добавления задач по id 'form'
+const form = document.querySelector('#form');
+// Находим поле ввода для новой задачи по id 'taskInput'
+const taskInput = document.querySelector('#taskInput');
+// Находим список активных задач по id 'todoTasksList'
+const todoTasksList = document.querySelector('#todoTasksList');
+// Находим список выполненных задач по id 'doneTasksList'
+const doneTasksList = document.querySelector('#doneTasksList');
 
-// Создаем массив в котором будут все задачи
+// Создаем массив для хранения задач
 let tasks = [];
 
-// Проверяем, есть ли в localStorage значение по ключу 'tasks' (не null и не undefined)
+// Проверяем, есть ли в localStorage сохраненные задачи под ключом 'tasks'
 if (localStorage.getItem('tasks')) {
-  // Пытаемся выполнить следующий блок кода, чтобы отловить возможные ошибки при парсинге JSON
   try {
-    // Получаем строку из localStorage по ключу 'tasks' и преобразуем её из JSON в объект/массив
+    // Пытаемся распарсить JSON строку из localStorage
     const parsedTasks = JSON.parse(localStorage.getItem('tasks'));
-    // Проверяем, что распарсенные данные действительно являются массивом
+    // Проверяем, что распарсенные данные — массив
     if (Array.isArray(parsedTasks)) {
-      tasks = parsedTasks; // Если это массив, присваиваем его переменной tasks
-      // Для каждой задачи из массива вызываем функцию renderTask для отображения на странице
-      tasks.forEach(function (task) {
-        renderTask(task);
-      });
-      // Если распарсенные данные не массив (например, объект или что-то другое)
+      tasks = parsedTasks; // присваиваем массив задач
+      // Отрисовываем каждую задачу на странице
+      tasks.forEach(task => renderTask(task));
     } else {
-      tasks = []; // Инициализируем tasks пустым массивом
-      saveToLocalStorage(); // Сохраняем пустой массив обратно в localStorage, чтобы исправить некорректные данные
+      // Если данные не массив — очищаем массив задач и сохраняем
+      tasks = [];
+      saveToLocalStorage();
     }
-    // Если при парсинге JSON возникла ошибка (например, повреждённый JSON)
   } catch (e) {
-    // Выводим ошибку в консоль для отладки
+    // Обработка ошибок при парсинге JSON
     console.error('Ошибка при чтении задач из localStorage:', e);
-    // Инициализируем tasks пустым массивом
     tasks = [];
-    // Сохраняем пустой массив обратно в localStorage, чтобы очистить некорректные данные
     saveToLocalStorage();
   }
 }
 
-// Добавление задачи
-form.addEventListener('submit', addTask); // Обработчик события для добавления новой задачи при отправке формы
+// Добавляем обработчик события 'submit' формы для добавления новой задачи
+form.addEventListener('submit', addTask);
 
-// Удаление и редактирование задачи в списке активных задач
+// Обрабатываем клики по активным задачам
 todoTasksList.addEventListener('click', handleTaskAction);
-doneTasksList.addEventListener('click', (event) => { // Обработчик для списка выполненных задач
+
+// Обрабатываем клики по выполненным задачам
+doneTasksList.addEventListener('click', (event) => {
+  // Если клик по кнопке с data-action="delete" — удаляем задачу
   if (event.target.dataset.action === 'delete') {
-    deleteCompletedTask(event); // Удаляем задачу из списка выполненных, если нажата кнопка "удалить"
+    deleteCompletedTask(event);
   }
 });
 
-// Функции:
-
-// Добавление задачи
+// Функция добавления новой задачи
 function addTask(event) {
-  event.preventDefault(); // Предотвращаем перезагрузку страницы при отправке формы
-  const taskText = taskInput.value.trim(); // Получаем текст задачи и убираем лишние пробелы
-
-  // Проверяем, что текст не пустой
+  event.preventDefault(); // предотвращаем перезагрузку страницы
+  const taskText = taskInput.value.trim(); // получаем и очищаем введенный текст
   if (!taskText) {
-    alert('Пожалуйста, введите задачу.'); // Если пустой, выводим предупреждение
+    alert('Пожалуйста, введите задачу.'); // предупреждение, если поле пустое
     return;
   }
-
-  // Создаем новый объект задачи с уникальным id и статусом выполнения
+  // Создаем объект задачи с уникальным id, текстом и статусом
   const newTask = {
-    id: Date.now(),
+    id: Date.now(), // уникальный id по времени
     text: taskText,
     done: false,
   };
-
-  tasks.push(newTask); // Добавляем новую задачу в массив задач
-  saveToLocalStorage(); // Сохраняем обновленный массив задач в localStorage
-  renderTask(newTask); // Отображаем новую задачу на странице
-
-  taskInput.value = ""; // Очищаем поле ввода после добавления задачи
-  taskInput.focus(); // Устанавливаем фокус обратно на поле ввода
+  tasks.push(newTask); // добавляем новую задачу в массив
+  saveToLocalStorage(); // сохраняем в localStorage
+  renderTask(newTask); // отображаем задачу на странице
+  taskInput.value = ''; // очищаем поле ввода
+  taskInput.focus(); // ставим фокус обратно в поле
 }
 
-// Обработчик действий с задачами (удаление, редактирование, завершение)
+// Обработка действий по задачам (удаление, редактирование, отметка выполнено)
 function handleTaskAction(event) {
-  const action = event.target.dataset.action; // Получаем действие из атрибута data-action
-
+  const action = event.target.dataset.action; // получаем действие из data-action
   if (action === 'delete') {
-    deleteTask(event);  // Если действие - удалить, вызываем функцию удаления задачи
+    deleteTask(event); // удалить задачу
   } else if (action === 'edit') {
-    editTask(event);   // Если действие - редактировать, вызываем функцию редактирования задачи
+    editTask(event); // редактировать задачу
   } else if (action === 'done') {
-    markAsDone(event); // Если действие - завершить, вызываем функцию завершения задачи
+    markAsDone(event); // отметить как выполненную
   }
 }
 
-// Функция для удаления активной задачи
+// Удаление активной задачи
 function deleteTask(event) {
-  const parenNode = event.target.closest('.task-list__item'); // Находим родительский элемент задачи (li)
-  const id = Number(parenNode.id); // Получаем id задачи
-
-  const index = tasks.findIndex(task => task.id === id); // Находим индекс задачи в массиве по id
-
+  const taskItem = event.target.closest('.task-list__item'); // находим родительский элемент задачи
+  const id = Number(taskItem.id); // получаем id задачи
+  const index = tasks.findIndex(task => task.id === id); // ищем индекс задачи в массиве
   if (index !== -1) {
-    tasks.splice(index, 1); // Удаляем задачу из массива по индексу
-    saveToLocalStorage(); // Сохраняем изменения в localStorage
-    parenNode.remove(); // Удаляем элемент из DOM-дерева на странице
+    tasks.splice(index, 1); // удаляем задачу из массива
+    saveToLocalStorage(); // сохраняем изменения
+    taskItem.remove(); // удаляем элемент из DOM
   }
 }
 
-// Функция для редактирования существующей задачи
+// Удаление выполненной задачи
+function deleteCompletedTask(event) {
+  const taskItem = event.target.closest('.task-list__item'); // ищем родительский элемент
+  const id = Number(taskItem.id); // получаем id
+  const index = tasks.findIndex(task => task.id === id); // ищем индекс
+  if (index !== -1) {
+    tasks.splice(index, 1); // удаляем из массива
+    saveToLocalStorage(); // сохраняем
+    taskItem.remove(); // удаляем из DOM
+  }
+}
+
+// Редактирование задачи
 function editTask(event) {
-  const taskItem = event.target.closest('.task-list__item'); // Находим элемент задачи, на который кликнули
-  const titleElement = taskItem.querySelector('.task-title'); // Получаем элемент заголовка задачи
-  const inputElement = taskItem.querySelector('.edit-input'); // Получаем элемент ввода для редактирования
-  const saveButton = taskItem.querySelector('.save-btn'); // Получаем кнопку сохранения
+  const taskItem = event.target.closest('.task-list__item'); // родительский элемент
+  const titleElement = taskItem.querySelector('.task-title'); // отображаемое название задачи
+  const inputElement = taskItem.querySelector('.edit-input'); // поле ввода для редактирования
+  const saveButton = taskItem.querySelector('.save-btn'); // кнопка сохранить
+  const buttons = taskItem.querySelectorAll('.task-item__buttons'); // все кнопки задачи
 
-  titleElement.style.display = 'none'; // Скрываем заголовок задачи
-  inputElement.style.display = 'block'; // Показываем элемент ввода
-  saveButton.style.display = 'block'; // Показываем кнопку сохранения
+  // Скрываем отображение текста и показываем поле редактирования
+  titleElement.style.display = 'none';
+  inputElement.style.display = 'block';
+  saveButton.style.display = 'block';
 
-  const buttons = taskItem.querySelectorAll('.task-item__buttons'); // Получаем все кнопки в элементе задачи
+  // Скрываем все кнопки (редактировать, завершить)
+  buttons.forEach(b => b.style.display = 'none');
 
-  // Скрываем все кнопки
-  buttons.forEach(button => {
-    button.style.display = 'none';
-  });
-
-  // Устанавливаем фокус на элемент ввода
+  // Устанавливаем фокус в поле редактирования
   inputElement.focus();
 
-  // Обработчик клика по кнопке сохранения
+  // Обработчик на кнопку "сохранить"
   saveButton.onclick = () => {
-    // Проверяем, что введённый текст не пустой
-    if (!inputElement.value.trim()) {
+    const newText = inputElement.value.trim(); // получаем новый текст
+    if (!newText) {
       alert('Пожалуйста, введите текст для редактирования.');
       return;
     }
+    // Обновляем отображаемый текст
+    titleElement.textContent = newText;
+    // Возвращаем видимость текста и скрываем поле редактирования
+    titleElement.style.display = 'block';
+    inputElement.style.display = 'none';
+    saveButton.style.display = 'none';
 
-    titleElement.textContent = inputElement.value; // Обновляем текст заголовка задачи новым значением из ввода
-    titleElement.style.display = 'block'; // Показываем заголовок задачи снова
-    inputElement.style.display = 'none'; // Скрываем элемент ввода и кнопку сохранения
-    saveButton.style.display = 'none'; // Скрываем элемент ввода и кнопку сохранения
+    // Показываем все кнопки обратно
+    buttons.forEach(b => b.style.display = 'flex');
 
-    // Показываем все кнопки снова
-    buttons.forEach(button => {
-      button.style.display = 'flex';
-    });
-
-    // Получаем ID задачи и находим её индекс в массиве задач
+    // Обновляем текст задачи в массиве
     const id = Number(taskItem.id);
-    const index = tasks.findIndex(task => task.id === id);
+    const index = tasks.findIndex(t => t.id === id);
     if (index !== -1) {
-      // Обновляем текст задачи в массиве задач
-      tasks[index].text = inputElement.value;
-      saveToLocalStorage(); // Сохраняем изменения в localStorage
+      tasks[index].text = newText; // меняем в массиве
+      saveToLocalStorage(); // сохраняем
     }
 
-    saveButton.onclick = null; // Убираем обработчик клика после сохранения
+    // Удаляем обработчик, чтобы не накапливался
+    saveButton.onclick = null;
   };
 }
 
-// Функция для переключения статуса выполнения задачи между активным и выполненным состоянием.
+// Переключение статуса задачи между активной и выполненной
 function markAsDone(event) {
-  const taskItem = event.target.closest('.task-list__item'); // Находим элемент задачи, на который кликнули
-  const id = Number(taskItem.id); // Получаем ID задачи
+  const taskItem = event.target.closest('.task-list__item'); // родительский элемент
+  const id = Number(taskItem.id); // id задачи
+  const index = tasks.findIndex(task => task.id === id); // индекс в массиве
+  if (index !== -1) {
+    // Переключаем статус
+    tasks[index].done = !tasks[index].done;
+    saveToLocalStorage(); // сохраняем
 
-  const taskIndex = tasks.findIndex(task => task.id === id); // Находим индекс задачи по ID
+    if (tasks[index].done) {
+      // Перемещаем задачу в список выполненных
+      doneTasksList.appendChild(taskItem);
+      taskItem.classList.add('done-task');
 
-  if (taskIndex !== -1) {
-    tasks[taskIndex].done = !tasks[taskIndex].done; // Переключаем статус выполнения
-
-    saveToLocalStorage(); // Сохраняем изменения в localStorage
-
-    // Перемещаем задачу между списками
-    if (tasks[taskIndex].done) {
-      doneTasksList.appendChild(taskItem); // Перемещаем задачу в список выполненных
-      taskItem.classList.add('done-task'); // Добавляем класс для стиля
+      // Скрываем кнопки редактирования и завершения
+      const buttonsContainer = taskItem.querySelector('.task-item__buttons');
+      if (buttonsContainer) {
+        const editBtn = buttonsContainer.querySelector('[data-action="edit"]');
+        const doneBtn = buttonsContainer.querySelector('[data-action="done"]');
+        if (editBtn) editBtn.style.display = 'none';
+        if (doneBtn) doneBtn.style.display = 'none';
+      }
     } else {
-      todoTasksList.appendChild(taskItem); // Перемещаем задачу обратно в список активных
-      taskItem.classList.remove('done-task'); // Убираем класс для стиля
+      // Возвращаем в активный список
+      todoTasksList.appendChild(taskItem);
+      taskItem.classList.remove('done-task');
+
+      // Показываем кнопки снова
+      const buttonsContainer = taskItem.querySelector('.task-item__buttons');
+      if (buttonsContainer) {
+        const editBtn = buttonsContainer.querySelector('[data-action="edit"]');
+        const doneBtn = buttonsContainer.querySelector('[data-action="done"]');
+        if (editBtn) editBtn.style.display = '';
+        if (doneBtn) doneBtn.style.display = '';
+      }
     }
   }
 }
 
-// Функция для удаления завершенной задачи из списка выполненных.
-function deleteCompletedTask(event) {
-  const taskItem = event.target.closest('.task-list__item'); // Находим элемент задачи, на который кликнули
-  const id = Number(taskItem.id); // Получаем ID задачи
-
-  const index = tasks.findIndex(task => task.id === id); // Находим индекс задачи по ID
-
-  if (index !== -1) {
-    tasks.splice(index, 1); // Удаляем задачу из массива
-    saveToLocalStorage(); // Сохраняем изменения
-
-    taskItem.remove(); // Удаляем элемент из DOM
-  }
-}
-
-// Функция для сохранения массива задач в localStorage.
-function saveToLocalStorage() {
-  localStorage.setItem('tasks', JSON.stringify(tasks)); // Сохраняем массив задач как строку JSON в localStorage
-}
-
+// Функция для отрисовки задачи на странице
 function renderTask(task) {
-  // Определяем CSS-класс для заголовка задачи в зависимости от её статуса (выполнена или нет)
+  // Определяем CSS класс для текста задачи в зависимости от её статуса
   const cssClass = task.done ? 'task-title task-title--done' : 'task-title';
 
-  // Создаём HTML-код для элемента задачи, включая все необходимые элементы и кнопки
+  // Создаем HTML блок задачи
   const taskHTML = `
-      <li id="${task.id}" class="task-list__item">
-            <span class="${cssClass} view-mode">${task.text}</span>
-            <input type="text" class="edit-input" value="${task.text}" style="display: none;">
-            <button type="button" class="save-btn" style="display: none;">Сохранить</button>
-            <div class="task-item__buttons">
-              <button type="button" data-action="edit" class="btn-action">
-                <img class="btn-img" src="./img/pencil.svg" alt="edit" width="18" height="18">
-              </button>
-              <button type="button" data-action="done" class="btn-action">
-                <img class="btn-img" src="./img/tick.svg" alt="Done" width="18" height="18">
-              </button>
-              <button type="button" data-action="delete" class="btn-action">
-                <img class="btn-img" src="./img/cross.svg" alt="delete" width="18" height="18">
-              </button>
-            </div>
-          </li>`;
+    <li id="${task.id}" class="task-list__item">
+      <span class="${cssClass} view-mode">${task.text}</span>
+      <input type="text" class="edit-input" value="${task.text}" style="display: none;">
+      <button type="button" class="save-btn" style="display: none;">Сохранить</button>
+      <div class="task-item__buttons">
+        <button type="button" data-action="edit" class="btn-action btn-done">
+          <img class="btn-img" src="./img/pencil.svg" alt="edit" width="18" height="18">
+        </button>
+        <button type="button" data-action="done" class="btn-action btn-done">
+          <img class="btn-img" src="./img/tick.svg" alt="Done" width="18" height="18">
+        </button>
+        <button type="button" data-action="delete" class="btn-action">
+          <img class="btn-img" src="./img/cross.svg" alt="delete" width="18" height="18">
+        </button>
+      </div>
+    </li>`;
 
-  if (task.done) { // Если задача выполнена, добавляем её в список выполненных задач
-    doneTasksList.insertAdjacentHTML('beforeend', taskHTML); // Вставляем HTML-код в конец списка выполненных задач
-  } else { // Иначе добавляем её в список активных задач
-    todoTasksList.insertAdjacentHTML('beforeend', taskHTML); // Вставляем HTML-код в конец списка активных задач
+  // В случае выполненной задачи — вставляем в список выполненных и скрываем кнопки редактирования/завершения
+  if (task.done) {
+    doneTasksList.insertAdjacentHTML('beforeend', taskHTML);
+    const insertedElement = document.getElementById(task.id);
+    if (insertedElement) {
+      const buttonsContainer = insertedElement.querySelector('.task-item__buttons');
+      if (buttonsContainer) {
+        const editBtn = buttonsContainer.querySelector('[data-action="edit"]');
+        const doneBtn = buttonsContainer.querySelector('[data-action="done"]');
+        if (editBtn) editBtn.style.display = 'none';
+        if (doneBtn) doneBtn.style.display = 'none';
+      }
+    }
+  } else {
+    // В остальных случаях — вставляем в активный список
+    todoTasksList.insertAdjacentHTML('beforeend', taskHTML);
   }
+}
+
+// Функция сохранения массива задач в localStorage
+function saveToLocalStorage() {
+  localStorage.setItem('tasks', JSON.stringify(tasks));
 }
